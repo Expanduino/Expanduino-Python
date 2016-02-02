@@ -33,7 +33,7 @@ class Subdevice:
   def short_name(self):
     return self.container.meta.subdevice_short_name(self.devNum)
 
-  def demo(self, sched):
+  def run(self, loop, is_demo):
     pass
 
   def __str__(self):

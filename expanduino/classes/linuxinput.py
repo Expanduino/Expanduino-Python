@@ -6,6 +6,7 @@ from enum import IntEnum
 from time import time
 import math
 import evdev
+import asyncio
 from collections import namedtuple, defaultdict
 from cached_property import cached_property
 
@@ -87,41 +88,31 @@ class LinuxInputSubdevice(Subdevice):
     print("ATTACHED!")
     print(self.uinput)
 
-  def dettach(self):
+  def detach(self):
     if self.uinput:
       self.uinput.close()
       self.uinput = None
 
-  def demo(self, sched):
+  def run(self, loop, is_demo):
     components = self.components
 
     for component in components:
       print("  %s" % component)
 
-    print(self.components_by_type)
-    timeBegin = time()   
-    def blink():
-      elapsed = time() - timeBegin
-      for i, component in enumerate(components):
-        #print("  %s" % component)
-        if self.uinput:
-          #if component.type[0] in [evdev.ecodes.EV_KEY, evdev.ecodes.EV_ABS]:
-          self.uinput.write(component.type[0], component.type[1], component.value)
-          #elif component.type[0] in [evdev.ecodes.EV_LED, evdev.ecodes.EV_SND]:
-            #val = round(0.5 + 0.5*math.sin(2 * math.pi * (elapsed + 1.0*i/len(components))))
-            #self.uinput.device.set(component.type[0], component.type[1], val)
-          
-      if self.uinput:
-        self.uinput.syn()
-        
-        try:
-          for ev in self.uinput.read():
-            component = self.components_by_type[(ev.type, ev.code)]
-            component.value = ev.value
-        except BlockingIOError:
-          pass
-
-      sched.enter(0.05, 1, blink)
     self.attach()
-    while True:
-      blink()
+    
+    def read_out_events():
+      for ev in self.uinput.read():
+        print("Event!", ev)
+        component = self.components_by_type[(ev.type, ev.code)]
+        component.value = ev.value
+    loop.add_reader(self.uinput.fileno(), read_out_events)
+
+    async def read_in_events():
+      while True:
+        for component in components:
+          if component.type[0] in [evdev.ecodes.EV_KEY, evdev.ecodes.EV_SW, evdev.ecodes.EV_ABS]:
+            self.uinput.write(component.type[0], component.type[1], component.value)
+        self.uinput.syn()
+        await asyncio.sleep(0.05)
+    asyncio.ensure_future(read_in_events())

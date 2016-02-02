@@ -6,6 +6,7 @@ from enum import IntEnum
 from time import time
 from cached_property import cached_property
 import math
+import asyncio
 
 class LedsSubdevice(Subdevice):
   class Command(IntEnum):
@@ -46,14 +47,19 @@ class LedsSubdevice(Subdevice):
       for i in range(num_leds)
     ]
 
-  def demo(self, sched):
+  def run(self, loop, is_demo):
     leds = self.leds
     for led in leds:
       print("  %s" % led)
 
-    timeBegin = time()   
-    def blink():
-      elapsed = time() - timeBegin
-      for i, led in enumerate(leds):
-        led.brightness = 0.5 + 0.5*math.sin(2 * math.pi * (elapsed + 1.0*i/len(leds)))
-      sched.enter(0.05, 1, blink)
+    if is_demo:
+      timeBegin = time()
+      async def blink():
+        while True:
+          #print("blink()")
+          elapsed = time() - timeBegin
+          for i, led in enumerate(leds):
+            led.brightness = 0.5 + 0.5*math.sin(2 * math.pi * (elapsed + 1.0*i/len(leds)))
+          await asyncio.sleep(0.05)
+      asyncio.ensure_future(blink())
+      

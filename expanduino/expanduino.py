@@ -48,7 +48,7 @@ class Expanduino:
     
     return subdevices
 
-  def demo(self, sched):
+  def run(self, loop, is_demo=False):
     print("Vendor:", self.vendor_name)
     print("Product:", self.product_name)
     print("Short name:", self.short_name)
@@ -56,4 +56,4 @@ class Expanduino:
 
     for subdevice in self.subdevices:
       print(subdevice)
-      subdevice.demo(sched)
+      subdevice.run(loop, is_demo)
