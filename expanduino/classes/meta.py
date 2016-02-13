@@ -8,16 +8,17 @@ from cached_property import cached_property
 
 class MetaSubdevice(Subdevice):
   class Command(IntEnum):
-    VENDOR_NAME          = 0
-    PRODUCT_NAME         = 1
-    SHORT_NAME           = 2
-    SERIAL_NUMBER        = 3
-    RESET                = 4
-    GET_INTERRUPTS       = 5
-    NUM_SUBDEVICES       = 6
-    SUBDEVICE_TYPE       = 7
-    SUBDEVICE_NAME       = 8
-    SUBDEVICE_SHORT_NAME = 9
+    VENDOR_NAME               =  0
+    PRODUCT_NAME              =  1
+    SHORT_NAME                =  2
+    SERIAL_NUMBER             =  3
+    RESET                     =  4
+    GET_INTERRUPTION          =  5
+    SET_INTERRUPTION_ENABLED  =  6
+    NUM_SUBDEVICES            =  7
+    SUBDEVICE_TYPE            =  8
+    SUBDEVICE_NAME            =  9
+    SUBDEVICE_SHORT_NAME      = 10
   
   def __init__(self, container, devNum):
     Subdevice.__init__(self, container, devNum)

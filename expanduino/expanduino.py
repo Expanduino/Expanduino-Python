@@ -15,6 +15,10 @@ class Expanduino:
     return self._call(devNum, cmd, args, parser)
 
   @property
+  def phys(self):
+    return "expanduino"
+  
+  @property
   def vendor_name(self):
     return self.meta.vendor_name
   
@@ -36,14 +40,13 @@ class Expanduino:
   @cached_property
   def subdevices(self):
     subdevice_classes = {
-      Subdevice.Type.META: MetaSubdevice,
       Subdevice.Type.LEDS: LedsSubdevice,
       Subdevice.Type.LINUX_INPUT: LinuxInputSubdevice,
     }
     
-    subdevices = [
+    subdevices = [self.meta] + [
       subdevice_classes.get(self.meta.subdevice_type(i), Subdevice)(self, i)
-      for i in range(self.meta.num_subdevices)
+      for i in range(1, self.meta.num_subdevices)
     ]
     
     return subdevices

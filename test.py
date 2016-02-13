@@ -8,7 +8,7 @@ import asyncio
 
 loop = asyncio.get_event_loop()
 
-expanduino = ExpanduinoI2C(bus_num=1, i2c_addr=0x56)
+expanduino = ExpanduinoI2C(bus_num=1, i2c_addr=0x56, interrupt_pin=7)
 expanduino.run(loop, True)
 
 try:

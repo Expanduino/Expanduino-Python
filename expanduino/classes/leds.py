@@ -59,7 +59,8 @@ class LedsSubdevice(Subdevice):
           #print("blink()")
           elapsed = time() - timeBegin
           for i, led in enumerate(leds):
-            led.brightness = 0.5 + 0.5*math.sin(2 * math.pi * (elapsed + 1.0*i/len(leds)))
+            #led.brightness = 0.5 + 0.5*math.sin(2 * math.pi * (elapsed + 1.0*i/len(leds)))
+            pass
           await asyncio.sleep(0.05)
       asyncio.ensure_future(blink())
       

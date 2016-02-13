@@ -9,6 +9,7 @@ import evdev
 import asyncio
 from collections import namedtuple, defaultdict
 from cached_property import cached_property
+import struct
 
 class LinuxInputSubdevice(Subdevice):
   class Command(IntEnum):
@@ -68,6 +69,29 @@ class LinuxInputSubdevice(Subdevice):
       component.type : component
       for component in self.components
     }
+
+  def handleInterruption(self, data):
+    if not self.uinput:
+      return
+    if not data:
+      return
+    
+    def unpack(stream, fmt):
+      size = struct.calcsize(fmt)
+      buf = stream.read(size)
+      if len(buf) != size:
+        return None
+      return struct.unpack(fmt, buf)
+
+    
+    components = self.components
+    while True:
+      e = unpack(data, '>Bi')
+      if not e:
+        break
+      component = components[e[0]]
+      self.uinput.write(component.type[0], component.type[1], e[1])        
+    self.uinput.syn()
   
   def attach(self):
     if self.uinput:
@@ -83,10 +107,7 @@ class LinuxInputSubdevice(Subdevice):
         ev_code = (ev_code, evdev.AbsInfo(max=abs_info.max, min=abs_info.min, fuzz=abs_info.fuzz, flat=abs_info.flat, value=0, resolution=0))
       events[ev_type].append(ev_code)
     
-    print(events)
-    self.uinput = evdev.UInput(events=events, name="meh")
-    print("ATTACHED!")
-    print(self.uinput)
+    self.uinput = evdev.UInput(events=events, name=self.name, phys=self.phys)
 
   def detach(self):
     if self.uinput:
@@ -101,12 +122,27 @@ class LinuxInputSubdevice(Subdevice):
 
     self.attach()
     
-    def read_out_events():
-      for ev in self.uinput.read():
-        print("Event!", ev)
+    async def read_out_events():
+      async for ev in self.uinput.read_iter():
+        print("Out event!", ev)
         component = self.components_by_type[(ev.type, ev.code)]
         component.value = ev.value
-    loop.add_reader(self.uinput.fileno(), read_out_events)
+    asyncio.ensure_future(read_out_events())
+    
+    async def read_in_events():
+      async for ev in self.uinput.device.read_iter():
+        print("Input event!", ev)
+    #asyncio.ensure_future(read_in_events())
+
+    async def blink():
+      while True:
+        for component in components:
+          self.uinput.device.write(component.type[0], component.type[1], 0)        
+        await asyncio.sleep(0.5)
+        for component in components:
+          self.uinput.device.write(component.type[0], component.type[1], 1)        
+        await asyncio.sleep(0.5)
+    #asyncio.ensure_future(blink())
 
     async def read_in_events():
       while True:
@@ -115,4 +151,4 @@ class LinuxInputSubdevice(Subdevice):
             self.uinput.write(component.type[0], component.type[1], component.value)
         self.uinput.syn()
         await asyncio.sleep(0.05)
-    asyncio.ensure_future(read_in_events())
+    #asyncio.ensure_future(read_in_events())
