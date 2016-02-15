@@ -10,6 +10,7 @@ import asyncio
 from collections import namedtuple, defaultdict
 from cached_property import cached_property
 import struct
+import io
 
 class LinuxInputSubdevice(Subdevice):
   class Command(IntEnum):
@@ -26,7 +27,6 @@ class LinuxInputSubdevice(Subdevice):
     def __init__(self, subdevice, componentNum):
       self.subdevice = subdevice
       self.componentNum = componentNum
-      self.uinput = None
 
     @cached_property
     def type(self):
@@ -83,23 +83,24 @@ class LinuxInputSubdevice(Subdevice):
         return None
       return struct.unpack(fmt, buf)
 
-    
+    stream = io.BytesIO(data)
     components = self.components
     while True:
-      e = unpack(data, '>Bi')
+      e = unpack(stream, '>Bi')
       if not e:
         break
       component = components[e[0]]
       self.uinput.write(component.type[0], component.type[1], e[1])        
     self.uinput.syn()
   
-  def attach(self):
+  async def attach(self):
     if self.uinput:
       return
     
     events = defaultdict(list)
     
     for component in self.components:
+      print("  ", component)
       ev_type = component.type[0]
       ev_code = component.type[1]
       if ev_type == evdev.ecodes.EV_ABS:
@@ -108,47 +109,58 @@ class LinuxInputSubdevice(Subdevice):
       events[ev_type].append(ev_code)
     
     self.uinput = evdev.UInput(events=events, name=self.name, phys=self.phys)
+    with self.uinput:
+      self.interruptionEnabled = True
+      async with self.interruptions():
+        async for ev in self.uinput.read_iter():
+          print("Out event!", ev)
+          component = self.components_by_type[(ev.type, ev.code)]
+          component.value = ev.value
+      
+    self.uinput = None
+    print("UInput device detached")
 
-  def detach(self):
-    if self.uinput:
-      self.uinput.close()
-      self.uinput = None
+  #def detach(self):
+    #if self.uinput:
+      #self.interruptionEnabled = False
+      #self.uinput.close()
+      #self.uinput = None
 
-  def run(self, loop, is_demo):
-    components = self.components
+  #def run(self, loop, is_demo):
+    #components = self.components
 
-    for component in components:
-      print("  %s" % component)
+    #for component in components:
+      #print("  %s" % component)
 
-    self.attach()
+    #self.attach()
     
-    async def read_out_events():
-      async for ev in self.uinput.read_iter():
-        print("Out event!", ev)
-        component = self.components_by_type[(ev.type, ev.code)]
-        component.value = ev.value
-    asyncio.ensure_future(read_out_events())
+    #async def read_out_events():
+      #async for ev in self.uinput.read_iter():
+        #print("Out event!", ev)
+        #component = self.components_by_type[(ev.type, ev.code)]
+        #component.value = ev.value
+    #asyncio.ensure_future(read_out_events())
     
-    async def read_in_events():
-      async for ev in self.uinput.device.read_iter():
-        print("Input event!", ev)
-    #asyncio.ensure_future(read_in_events())
+    #async def read_in_events():
+      #async for ev in self.uinput.device.read_iter():
+        #print("Input event!", ev)
+    ##asyncio.ensure_future(read_in_events())
 
-    async def blink():
-      while True:
-        for component in components:
-          self.uinput.device.write(component.type[0], component.type[1], 0)        
-        await asyncio.sleep(0.5)
-        for component in components:
-          self.uinput.device.write(component.type[0], component.type[1], 1)        
-        await asyncio.sleep(0.5)
-    #asyncio.ensure_future(blink())
+    #async def blink():
+      #while True:
+        #for component in components:
+          #self.uinput.device.write(component.type[0], component.type[1], 0)        
+        #await asyncio.sleep(0.5)
+        #for component in components:
+          #self.uinput.device.write(component.type[0], component.type[1], 1)        
+        #await asyncio.sleep(0.5)
+    ##asyncio.ensure_future(blink())
 
-    async def read_in_events():
-      while True:
-        for component in components:
-          if component.type[0] in [evdev.ecodes.EV_KEY, evdev.ecodes.EV_SW, evdev.ecodes.EV_ABS]:
-            self.uinput.write(component.type[0], component.type[1], component.value)
-        self.uinput.syn()
-        await asyncio.sleep(0.05)
-    #asyncio.ensure_future(read_in_events())
+    #async def read_in_events():
+      #while True:
+        #for component in components:
+          #if component.type[0] in [evdev.ecodes.EV_KEY, evdev.ecodes.EV_SW, evdev.ecodes.EV_ABS]:
+            #self.uinput.write(component.type[0], component.type[1], component.value)
+        #self.uinput.syn()
+        #await asyncio.sleep(0.05)
+    ##asyncio.ensure_future(read_in_events())

@@ -6,12 +6,15 @@ from expanduino.classes.meta import MetaSubdevice
 import time
 import asyncio
 
-loop = asyncio.get_event_loop()
-
 expanduino = ExpanduinoI2C(bus_num=1, i2c_addr=0x56, interrupt_pin=7)
-expanduino.run(loop, True)
 
-try:
-  loop.run_forever()
-except KeyboardInterrupt:
-  pass
+task = asyncio.ensure_future(expanduino.attach())
+
+
+while True:
+  try:
+    asyncio.get_event_loop().run_until_complete(task)
+    break
+  except KeyboardInterrupt:
+    print("KeyboardInterrupt, exiting...")
+    task.cancel()

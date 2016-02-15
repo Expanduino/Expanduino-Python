@@ -14,11 +14,12 @@ class MetaSubdevice(Subdevice):
     SERIAL_NUMBER             =  3
     RESET                     =  4
     GET_INTERRUPTION          =  5
-    SET_INTERRUPTION_ENABLED  =  6
-    NUM_SUBDEVICES            =  7
-    SUBDEVICE_TYPE            =  8
-    SUBDEVICE_NAME            =  9
-    SUBDEVICE_SHORT_NAME      = 10
+    GET_INTERRUPTION_ENABLED  =  6
+    SET_INTERRUPTION_ENABLED  =  7
+    NUM_SUBDEVICES            =  8
+    SUBDEVICE_TYPE            =  9
+    SUBDEVICE_NAME            = 10
+    SUBDEVICE_SHORT_NAME      = 11
   
   def __init__(self, container, devNum):
     Subdevice.__init__(self, container, devNum)
@@ -55,3 +56,8 @@ class MetaSubdevice(Subdevice):
   def subdevice_short_name(self, devNum):
     return self.call(MetaSubdevice.Command.SUBDEVICE_SHORT_NAME, args=[devNum], parser=parseString)
   
+  def subdevice_get_interrupt_enabled(self, devNum):
+    return self.call(MetaSubdevice.Command.GET_INTERRUPTION_ENABLED, args=[devNum], parser=parseBool)
+
+  def subdevice_set_interrupt_enabled(self, devNum, enabled):
+    self.call(MetaSubdevice.Command.SET_INTERRUPTION_ENABLED, args=[devNum, enabled])

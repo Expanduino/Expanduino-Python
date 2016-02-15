@@ -29,8 +29,14 @@ def parsePacked(pattern):
     return struct.unpack(">" + pattern, args)
   return f
 
+def parseBool(x):
+  return bool(x[0])
+
 def parseByte(x):
   return x[0]
+
+def parseBytes(x):
+  return x
 
 def parseInt(x):
   return x[0]

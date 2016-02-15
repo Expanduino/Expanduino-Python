@@ -7,7 +7,6 @@ from retry import retry
 from threading import Lock
 import asyncio
 import RPi.GPIO as GPIO
-import io
 
 class ExpanduinoI2C(Expanduino):
   def __init__(self, bus_num, i2c_addr, interrupt_pin):
@@ -36,13 +35,14 @@ class ExpanduinoI2C(Expanduino):
       if GPIO.input(self.interrupt_pin) == 1:
         self.interruption_future = asyncio.Future()
         if GPIO.input(self.interrupt_pin) == 1:
-          await self.interruption_future
+          await asyncio.wait([self.interruption_future], timeout=0.01)
         
       payload = self.meta.call(MetaSubdevice.Command.GET_INTERRUPTION, parser=bytes)
+      #print("Interrupt!", payload)
       if payload:
-        self.subdevices[payload[0]].handleInterruption(io.BytesIO(payload[1:]))
-      else:
-        print("-")
+        self.subdevices[payload[0]].handleInterruption(payload[1:])
+      #else:
+        #print("-")
     
 
      
@@ -50,11 +50,12 @@ class ExpanduinoI2C(Expanduino):
   def phys(self):
     return "expanduino@i2c-%x-%x" % (self.bus_num, self.i2c_addr)
     
-  @retry(tries=3)
+  @retry(tries=5)
   def _call(self, devNum, cmd, args, parser):
     opcode = (devNum << 4) + cmd
 
     with self.lock:
+      time.sleep(0.005)
       if args is not None:
         #print(">>", devNum, cmd, args)
         self.bus.write_block_data(self.i2c_addr, opcode, args)

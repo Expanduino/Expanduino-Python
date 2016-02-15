@@ -36,11 +36,35 @@ class Subdevice:
   @property
   def phys(self):
     return "%s/%s@%x" % (self.container.phys, self.short_name, self.devNum)
+  
+  @property
+  def interruptionEnabled(self):
+    return self.container.meta.subdevice_get_interrupt_enabled(self.devNum)
+  
+  @interruptionEnabled.setter
+  def interruptionEnabled(self, enabled):
+    self.container.meta.subdevice_set_interrupt_enabled(self.devNum, enabled)
+  
+  def interruptions(self):
+    class Context:
+      def __init__(self, subdevice):
+        self.subdevice = subdevice
+        self.old_value = None
+      
+      async def __aenter__(self):
+        self.old_value = self.subdevice.interruptionEnabled
+        self.subdevice.interruptionEnabled = True
+
+      async def __aexit__(self, exc_type, exc, tb):
+        self.subdevice.interruptionEnabled = self.old_value
+        self.old_value = None
+    return Context(self)
+
 
   def handleInterruption(self, data):
     print(self.name, "Got interrupt", data)
 
-  def run(self, loop, is_demo):
+  async def attach(self):
     pass
 
   def __str__(self):
