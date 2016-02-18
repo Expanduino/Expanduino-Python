@@ -7,18 +7,33 @@ async def run_coroutines(*coroutines):
     asyncio.ensure_future(coroutine)
     for coroutine in coroutines
   ]
-  ex = None
+  ex = []
   while tasks:
     try:
-      _, tasks = await asyncio.wait(tasks, return_when=asyncio.FIRST_EXCEPTION)
+      await asyncio.wait(tasks, return_when=asyncio.FIRST_EXCEPTION)
+    except asyncio.CancelledError:
+      pass
     except Exception as e:
       traceback.print_exc()
-      ex = e
+      ex.append(e)
+
     finally:
+      pending = []
       for task in tasks:
-        task.cancel()
+        if not task.done():
+          task.cancel()
+          pending.append(task)
+        else:
+          try:
+            task.result()
+          except asyncio.CancelledError:
+            pass
+          except Exception as e:
+            traceback.print_exc()
+            ex.append(e)
+      tasks = pending
   if ex:
-    raise ex
+    raise ex[0]
 
 
 

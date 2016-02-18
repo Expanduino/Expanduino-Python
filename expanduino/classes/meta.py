@@ -25,27 +25,30 @@ class MetaSubdevice(Subdevice):
     Subdevice.__init__(self, container, devNum)
     
   @cached_property
-  def vendor_name(self):
+  def device_vendor_name(self):
     return self.call(MetaSubdevice.Command.VENDOR_NAME, parser=parseString)
   
   @cached_property
-  def product_name(self):
+  def device_product_name(self):
     return self.call(MetaSubdevice.Command.PRODUCT_NAME, parser=parseString)
   
   @cached_property
-  def short_name(self):
+  def device_short_name(self):
     return self.call(MetaSubdevice.Command.SHORT_NAME, parser=parseString)
   
   @cached_property
-  def serial_number(self):
+  def device_serial_number(self):
     return self.call(MetaSubdevice.Command.SERIAL_NUMBER, parser=parseString)
 
-  def reset(self):
+  def device_reset(self):
     self.call(MetaSubdevice.Command.RESET)
 
   @cached_property
   def num_subdevices(self):
     return self.call(MetaSubdevice.Command.NUM_SUBDEVICES, parser=parseByte)
+
+  def subdevice_reset(self, devNum):
+    return self.call(MetaSubdevice.Command.RESET, args=[devNum])
 
   def subdevice_type(self, devNum):
     return self.call(MetaSubdevice.Command.SUBDEVICE_TYPE, args=[devNum], parser=parseEnum(Subdevice.Type))

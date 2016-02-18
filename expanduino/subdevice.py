@@ -45,17 +45,20 @@ class Subdevice:
   def interruptionEnabled(self, enabled):
     self.container.meta.subdevice_set_interrupt_enabled(self.devNum, enabled)
   
-  def interruptions(self):
+  def reset(self):
+    self.container.meta.subdevice_reset(self.devNum)
+  
+  def with_interruptions(self):
     class Context:
       def __init__(self, subdevice):
         self.subdevice = subdevice
         self.old_value = None
       
-      async def __aenter__(self):
+      def __enter__(self):
         self.old_value = self.subdevice.interruptionEnabled
         self.subdevice.interruptionEnabled = True
 
-      async def __aexit__(self, exc_type, exc, tb):
+      def __exit__(self, exc_type, exc, tb):
         self.subdevice.interruptionEnabled = self.old_value
         self.old_value = None
     return Context(self)

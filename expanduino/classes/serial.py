@@ -82,7 +82,7 @@ class SerialSubdevice(Subdevice):
   async def attach(self):
     serials = self.serials
 
-    async with self.interruptions():
+    with self.with_interruptions():
       coroutines = []
       for serial in serials:
         print("  ", serial)

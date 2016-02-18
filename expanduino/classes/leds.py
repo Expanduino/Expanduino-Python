@@ -47,20 +47,15 @@ class LedsSubdevice(Subdevice):
       for i in range(num_leds)
     ]
 
-  def run(self, loop, is_demo):
+  async def attach(self):
+    for led in self.leds:
+      print("  ", led)
+    
+    timeBegin = time()
     leds = self.leds
-    for led in leds:
-      print("  %s" % led)
-
-    if is_demo:
-      timeBegin = time()
-      async def blink():
-        while True:
-          #print("blink()")
-          elapsed = time() - timeBegin
-          for i, led in enumerate(leds):
-            #led.brightness = 0.5 + 0.5*math.sin(2 * math.pi * (elapsed + 1.0*i/len(leds)))
-            pass
-          await asyncio.sleep(0.05)
-      asyncio.ensure_future(blink())
-      
+    
+    while True:
+      elapsed = time() - timeBegin
+      for i, led in enumerate(leds):
+        led.brightness = math.sin(math.pi * (elapsed + 1.0*i/len(leds)))**2
+      await asyncio.sleep(0.01)
