@@ -34,10 +34,8 @@ class LinuxInputSubdevice(Subdevice):
     
     @cached_property
     def abs_info(self):
-      try:
+      if self.type[0] == evdev.ecodes.EV_ABS:
         return LinuxInputSubdevice.AbsInfo(*self.subdevice.call(LinuxInputSubdevice.Command.COMPONENT_ABS_INFO, args=[self.componentNum], parser=parsePacked("iiii")))
-      except struct.error:
-        return None
       
     @property
     def value(self):
