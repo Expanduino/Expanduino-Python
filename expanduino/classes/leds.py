@@ -58,4 +58,4 @@ class LedsSubdevice(Subdevice):
       elapsed = time() - timeBegin
       for i, led in enumerate(leds):
         led.brightness = math.sin(math.pi * (elapsed + 1.0*i/len(leds)))**2
-      await asyncio.sleep(0.01)
+      await asyncio.sleep(0.05)

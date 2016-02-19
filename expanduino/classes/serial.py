@@ -7,7 +7,22 @@ from time import time
 from cached_property import cached_property
 import asyncio
 import os
+import termios
+import re
+from fcntl import ioctl
 from ..utils import run_coroutines, create_link, forever, fd_reader
+
+EXTPROC = 0o200000
+TIOCPKT_IOCTL = 64
+
+BAUD_CONSTANTS = {
+  getattr(termios, x): int(x[1:])
+  for x in filter(lambda x: re.match("B\\d+", x), dir(termios)) 
+}
+CHARACTER_SIZE_CONSTANTS = {
+  getattr(termios, x): int(x[2:])
+  for x in filter(lambda x: re.match("CS\\d+", x), dir(termios)) 
+}
 
 class SerialSubdevice(Subdevice):
   class Command(IntEnum):
@@ -48,8 +63,55 @@ class SerialSubdevice(Subdevice):
       
       self.ptyMaster, self.ptySlave = os.openpty()
       try:
+        attr = termios.tcgetattr(self.ptyMaster)
+        attr[3] |= EXTPROC
+        termios.tcsetattr(self.ptyMaster, termios.TCSANOW, attr)
+        ioctl(self.ptyMaster, termios.TIOCPKT, b'\1')
+        
+        
+        def got_packet(packet):
+
+          if packet[0] == termios.TIOCPKT_DATA:
+            self.write(packet[1:])
+
+          if packet[0] & TIOCPKT_IOCTL:
+            attr = termios.tcgetattr(self.ptyMaster)
+            
+            # Dont let the slave clear the EXTPROC flag (e.g., screen does so)
+            # IMO, allowing the slave fd to do this sounds pretty dumb
+            if not attr[3] & EXTPROC:
+              attr[3] |= EXTPROC
+              termios.tcsetattr(self.ptyMaster, termios.TCSANOW, attr)
+            
+            ibaud = BAUD_CONSTANTS[attr[4]]
+            obaud = BAUD_CONSTANTS[attr[5]]
+            
+            #FIXME: Pty driver assumes 8 bits, no parity, ALWAYS
+            #https://github.com/torvalds/linux/blob/master/drivers/tty/pty.c#L290-L291
+            
+            bits = CHARACTER_SIZE_CONSTANTS[attr[2] & termios.CSIZE]
+            
+            if attr[2] & termios.PARENB:
+              if attr[2] & termios.PARODD:
+                parity = 'O'  
+              else:
+                parity = 'E'
+            else:
+              parity = 'N'
+              
+              
+            if attr[2] & termios.CSTOPB:
+              stop_bits = 2
+            else:
+              stop_bits = 1
+            
+            
+            
+            print("Changed %s config: %d:%d  %d%s%d" % (self, ibaud, obaud, bits, parity, stop_bits))
+            #TODO: Reconfigure the port
+        
         async with create_link(os.ttyname(self.ptySlave), "/dev/ttyExpanduino%d") as link:
-          async with fd_reader(self.ptyMaster, n=20, callback=self.write):
+          async with fd_reader(self.ptyMaster, n=20, callback=got_packet):
             await forever()
         
       finally:
