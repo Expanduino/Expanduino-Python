@@ -9,7 +9,7 @@ import signal
 loop = asyncio.get_event_loop()
 
 
-expanduino = ExpanduinoI2C(bus_num=1, i2c_addr=0x56, interrupt_pin=7)
+expanduino = ExpanduinoI2C(bus_num=0, i2c_addr=0x56, interrupt_pin=7)
 
 task = asyncio.ensure_future(expanduino.attach())
 
