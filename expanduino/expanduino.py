@@ -1,5 +1,6 @@
 from expanduino.classes.meta import MetaSubdevice
 from expanduino.classes.leds import LedsSubdevice
+from expanduino.classes.lcd import LcdSubdevice
 from expanduino.classes.linuxinput import LinuxInputSubdevice
 from expanduino.classes.serial import SerialSubdevice
 from expanduino.subdevice import Subdevice
@@ -45,6 +46,7 @@ class Expanduino:
       Subdevice.Type.LEDS: LedsSubdevice,
       Subdevice.Type.LINUX_INPUT: LinuxInputSubdevice,
       Subdevice.Type.SERIAL: SerialSubdevice,
+      Subdevice.Type.LCD: LcdSubdevice,
     }
     
     subdevices = [self.meta] + [

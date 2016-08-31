@@ -3,16 +3,17 @@ from cached_property import cached_property
 
 class Subdevice:
   class Type(IntEnum):
-    MISSING      = 0
-    META         = 1
-    LEDS         = 2
-    GPIO         = 3
-    LINUX_INPUT  = 4
-    HID          = 5
-    SERIAL       = 6
-    MISC         = 7
-    I2C          = 8
-    SPI          = 9
+    MISSING      =  0
+    META         =  1
+    LEDS         =  2
+    GPIO         =  3
+    LINUX_INPUT  =  4
+    HID          =  5
+    SERIAL       =  6
+    MISC         =  7
+    I2C          =  8
+    SPI          =  9
+    LCD          = 10
 
   def __init__(self, container, devNum):
     self.container = container
