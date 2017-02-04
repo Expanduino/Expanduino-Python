@@ -107,8 +107,10 @@ class LinuxInputSubdevice(Subdevice):
     self.uinput = evdev.UInput(events=events, name=self.name, phys=self.phys)
     try:
       with self.uinput:
-        self.interruptionEnabled = True
         with self.with_interruptions():
+          for component in self.components:
+            self.uinput.write(component.type[0], component.type[1], component.value)        
+            
           async for ev in self.uinput.async_read_loop():
             component = self.components_by_type[(ev.type, ev.code)]
             component.value = ev.value
