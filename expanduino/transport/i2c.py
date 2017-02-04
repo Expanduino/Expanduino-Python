@@ -79,7 +79,7 @@ class ExpanduinoI2C(Expanduino):
     #time.sleep(0.001)
     if parser is not None:
       #self.bus._set_addr(self.i2c_addr)
-      payload = bytes(os.read(self.bus.fd, 20))
+      payload = bytes(os.read(self.bus.fd, 32))
       payload = payload[1:payload[0]+1]
       #print("<<", payload)
       return parser(payload)
