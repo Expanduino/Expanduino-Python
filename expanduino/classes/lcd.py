@@ -19,13 +19,17 @@ class LcdSubdevice(Subdevice):
     SET_BRIGHTNESS  = 4
   
   def cmd(self, cmd):
-    self.call(LcdSubdevice.Command.CMD, args=[cmd])
+    chunk_size = 8
+    args = [cmd]
+    while len(args):
+      n = self.call(LcdSubdevice.Command.CMD, args=args[:chunk_size], parser=parseByte)
+      args = args[n:]
 
   def write(self, text):
-    MAX_CHUNK_SIZE = 10
-    while text:
-      self.call(LcdSubdevice.Command.WRITE_TEXT, args=text[0:MAX_CHUNK_SIZE])
-      text = text[MAX_CHUNK_SIZE:]
+    chunk_size = 8
+    while len(text):
+      n = self.call(LcdSubdevice.Command.WRITE_TEXT, args=text[:chunk_size], parser=parseByte)
+      text = text[n:]
     
   def read(self, n):
     return self.call(LcdSubdevice.Command.READ_TEXT, args=[n], parser=parseBytes)
