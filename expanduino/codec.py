@@ -21,28 +21,27 @@ def defaultEncoder(x):
   else:
     raise TypeError("defaultEncoder supports String, Bytes and LIst<Byte>")
 
-
-
-
-def parsePacked(pattern):
-  def f(args):
-    return struct.unpack(">" + pattern, args)
-  return f
-
 def parseBool(x):
   return bool(x[0])
+parseBool.expectedSize=1
 
 def parseByte(x):
-  return x[0]
-
-def parseBytes(x):
-  return x
-
-def parseInt(x):
-  return x[0]
+    return x[0]
+parseByte.expectedSize=1
 
 def parseEnum(enum):
-  return lambda x: enum(x[0])
+  ret = lambda x: enum(x[0])
+  ret.expectedSize = 1
+  return ret
+
+def parsePacked(pattern):
+  pattern = ">" + pattern
+  ret = lambda x: struct.unpack(pattern, x)
+  ret.expectedSize = struct.calcsize(pattern)
+  return ret
+  
+def parseBytes(x):
+  return x
 
 def parseString(x):
   return str(x, "utf8")
